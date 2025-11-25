@@ -3,125 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOVIX Database Dashboard</title>
+    <title>MOVIX - Social Cinema</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>MOVIX Admin Dashboard</h1>
-        <p>Database Connectivity Test</p>
-    </header>
+
+    <!-- NAVIGATION (Hidden on Login) -->
+    <nav id="navbar" class="hidden">
+        <div class="nav-brand">MOVIX</div>
+        <div class="nav-links">
+            <a href="#" onclick="showPage('home')">Home</a>
+            <a href="#" onclick="showPage('movies')">Movies</a>
+            <a href="#" onclick="showPage('profile')">My Profile</a>
+            <a href="#" onclick="logout()" class="btn-logout">Logout</a>
+        </div>
+    </nav>
 
     <div class="container">
-        <div class="card">
-            <h2>Add New User</h2>
-            <p><i>Tests Stored Procedure: <code>add_user</code></i></p>
-            <form id="addUserForm">
-                <input type="text" id="username" placeholder="Username" required>
-                <input type="email" id="email" placeholder="Email" required>
-                <input type="password" id="password" placeholder="Password Hash" required>
-                <select id="subId">
-                    <option value="1">Basic Plan (ID: 1)</option>
-                    <option value="2">Standard Plan (ID: 2)</option>
-                    <option value="3">Premium Plan (ID: 3)</option>
-                </select>
-                <button type="submit">Add User</button>
-            </form>
-            <div id="addMessage" class="message"></div>
-        </div>
+        
+        <!-- PAGE: AUTH (LOGIN / REGISTER) -->
+        <section id="login-page" class="page active">
+            <div class="login-box">
+                <h1 id="authTitle">Welcome back</h1>
+                <p id="authSubtitle">Sign in to your Movix account</p>
+                
+                <!-- LOGIN FORM -->
+                <form id="loginForm">
+                    <input type="email" id="loginEmail" placeholder="Email" required>
+                    <input type="password" id="loginPass" placeholder="Password" required>
+                    <button type="submit">Sign In</button>
+                </form>
 
-        <div class="card">
-            <h2>All Users</h2>
-            <p><i>Tests Table: <code>Users</code></i></p>
-            <button onclick="fetchUsers()">Refresh User List</button>
-            <div id="userList" class="data-box"></div>
-        </div>
+                <!-- REGISTER FORM (Hidden by default) -->
+                <form id="registerForm" class="hidden">
+                    <input type="text" id="regUsername" placeholder="Username" required>
+                    <input type="email" id="regEmail" placeholder="Email" required>
+                    <input type="password" id="regPass" placeholder="Password" required>
+                    <select id="regPlan" required>
+                        <option value="" disabled selected>Select Subscription Plan</option>
+                        <option value="1">Basic ($5.99)</option>
+                        <option value="2">Standard ($9.99)</option>
+                        <option value="3">Premium ($14.99)</option>
+                    </select>
+                    <button type="submit" class="btn-register">Create Account</button>
+                </form>
 
-        <div class="card">
-            <h2>Top Rated Content</h2>
-            <p><i>Tests Procedure: <code>top_rated_by_genre</code></i></p>
-            <input type="text" id="genreInput" placeholder="Enter Genre (e.g. Sci-Fi, Action)">
-            <button onclick="fetchTopContent()">Get Content</button>
-            <div id="contentList" class="data-box"></div>
-        </div>
+                <p class="hint" id="toggleText">
+                    New to Movix? <a href="#" onclick="toggleAuth()">Sign Up here</a>
+                </p>
+                
+                <div id="authMessage" style="margin-top:10px; color: #ff5555;"></div>
+            </div>
+        </section>
 
-        <div class="card">
-            <h2>Top Watchers (Analytics)</h2>
-            <p><i>Tests View: <code>top_users</code></i></p>
-            <button onclick="fetchAnalytics()">Load Top Users</button>
-            <div id="analyticsList" class="data-box"></div>
-        </div>
+        <!-- PAGE: HOME (Community Feed) -->
+        <section id="home-page" class="page hidden">
+            <div class="hero">
+                <h1>Community Pulse</h1>
+                <p>See what others are watching on Movix.</p>
+            </div>
+            
+            <div class="dashboard-grid">
+                <div class="panel">
+                    <h3>Recent Reviews</h3>
+                    <div id="communityReviews" class="feed-list">Loading...</div>
+                </div>
+                <div class="panel">
+                    <h3>Top Watchers (Leaderboard)</h3>
+                    <div id="topUsersList" class="leaderboard-list">Loading...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE: MOVIES (Catalog & Rate) -->
+        <section id="movies-page" class="page hidden">
+            <h1>Browse & Rate</h1>
+            <p>Click a movie to log a review.</p>
+            <div id="moviesGrid" class="movies-grid"></div>
+
+            <!-- Modal for Reviewing -->
+            <div id="reviewModal" class="modal hidden">
+                <div class="modal-content">
+                    <span class="close" onclick="closeModal()">&times;</span>
+                    <h2 id="modalTitle">Review Movie</h2>
+                    <form id="reviewForm">
+                        <input type="hidden" id="modalContentId">
+                        <label>Rating (1-5):</label>
+                        <select id="modalRating">
+                            <option value="5">★★★★★</option>
+                            <option value="4">★★★★</option>
+                            <option value="3">★★★</option>
+                            <option value="2">★★</option>
+                            <option value="1">★</option>
+                        </select>
+                        <textarea id="modalText" placeholder="Write your thoughts..." required></textarea>
+                        <button type="submit">Log Review</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE: PROFILE (My Stats & History) -->
+        <section id="profile-page" class="page hidden">
+            <div class="profile-header">
+                <div class="avatar">👤</div>
+                <div class="profile-info">
+                    <h2 id="profileName">Username</h2>
+                    <p id="profileEmail">user@email.com</p>
+                    <span class="badge" id="profilePlan">Plan</span>
+                </div>
+                <div class="stats-box">
+                    <div class="stat">
+                        <span id="statAvgTime">0</span>
+                        <label>Avg Watch (Mins)</label>
+                    </div>
+                </div>
+            </div>
+
+            <h3>My Watch History</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Genre</th>
+                            <th>Date</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyList">
+                        <!-- JS fills this -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
     </div>
 
-    <script>
-        const API_URL = 'http://localhost:3000/api';
-
-        // 1. ADD USER
-        document.getElementById('addUserForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const data = {
-                username: document.getElementById('username').value,
-                email: document.getElementById('email').value,
-                password: document.getElementById('password').value,
-                subscription_id: document.getElementById('subId').value
-            };
-
-            try {
-                const res = await fetch(`${API_URL}/users`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const result = await res.json();
-                document.getElementById('addMessage').innerText = result.message || 'Error adding user';
-                fetchUsers(); // Refresh list
-            } catch (err) {
-                console.error(err);
-            }
-        });
-
-        // 2. FETCH USERS
-        async function fetchUsers() {
-            const res = await fetch(`${API_URL}/users`);
-            const users = await res.json();
-            let html = '<table><tr><th>ID</th><th>User</th><th>Email</th><th>Plan ID</th></tr>';
-            users.forEach(u => {
-                html += `<tr><td>${u.user_id}</td><td>${u.username}</td><td>${u.email}</td><td>${u.subscription_id}</td></tr>`;
-            });
-            html += '</table>';
-            document.getElementById('userList').innerHTML = html;
-        }
-
-        // 3. FETCH TOP CONTENT
-        async function fetchTopContent() {
-            const genre = document.getElementById('genreInput').value || 'Action';
-            const res = await fetch(`${API_URL}/content/top/${genre}`);
-            const content = await res.json();
-            
-            if(content.length === 0) {
-                document.getElementById('contentList').innerHTML = "No content found for this genre.";
-                return;
-            }
-
-            let html = '<table><tr><th>Title</th><th>Rating</th></tr>';
-            content.forEach(c => {
-                html += `<tr><td>${c.title}</td><td>${c.rating}</td></tr>`;
-            });
-            html += '</table>';
-            document.getElementById('contentList').innerHTML = html;
-        }
-
-        // 4. FETCH ANALYTICS (VIEW)
-        async function fetchAnalytics() {
-            const res = await fetch(`${API_URL}/analytics/top-users`);
-            const data = await res.json();
-            let html = '<table><tr><th>Username</th><th>Total Watch Minutes</th></tr>';
-            data.forEach(d => {
-                html += `<tr><td>${d.username}</td><td>${d.total_watch_time}</td></tr>`;
-            });
-            html += '</table>';
-            document.getElementById('analyticsList').innerHTML = html;
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
