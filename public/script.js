@@ -146,7 +146,8 @@ async function loadHome() {
     try {
         // Recent Reviews
         const resRev = await fetch(`${API_URL}/community/reviews`);
-        const reviews = await resRev.json();
+        const revData = await resRev.json();
+        const reviews = revData.data || revData || [];
         const reviewHTML = reviews.map(r => `
             <div class="review-card">
                 <div class="review-header"><strong>${r.username}</strong> watched <strong>${r.title}</strong></div>
@@ -158,14 +159,15 @@ async function loadHome() {
 
         // Top Users (View)
         const resTop = await fetch(`${API_URL}/community/top-users`);
-        const users = await resTop.json();
+        const topData = await resTop.json();
+        const users = topData.data || topData || [];
         const userHTML = users.map((u, index) => `
             <div class="leaderboard-item">
                 <span>#${index + 1} ${u.username}</span>
                 <span>${u.total_watch_time || 0} mins</span>
             </div>
         `).join('');
-        document.getElementById('topUsersList').innerHTML = userHTML;
+        document.getElementById('topUsersList').innerHTML = userHTML || 'Loading leaderboard...';
     } catch (err) {
         console.error("Error loading home:", err);
     }
@@ -178,14 +180,17 @@ async function loadProfile() {
         const res = await fetch(`${API_URL}/user/${currentUser.user_id}/details`);
         const data = await res.json();
 
-        document.getElementById('profileName').innerText = data.info.username;
-        document.getElementById('profileEmail').innerText = data.info.email;
-        document.getElementById('profilePlan').innerText = data.subscription || 'No Plan';
-        document.getElementById('statAvgTime').innerText = data.avgWatchTime || '0';
+        if (data.success) {
+            document.getElementById('profileName').innerText = data.info.username || 'User';
+            document.getElementById('profileEmail').innerText = data.info.email || 'N/A';
+            document.getElementById('profilePlan').innerText = data.subscription || 'No Plan';
+            document.getElementById('statAvgTime').innerText = data.avgWatchTime || '0';
+        }
 
         // History
         const hRes = await fetch(`${API_URL}/user/${currentUser.user_id}/history`);
-        const history = await hRes.json();
+        const histData = await hRes.json();
+        const history = histData.data || histData || [];
         
         const rows = history.map(h => `
             <tr>
@@ -205,17 +210,18 @@ async function loadProfile() {
 async function loadMovies() {
     try {
         const res = await fetch(`${API_URL}/content`);
-        const movies = await res.json();
+        const contentData = await res.json();
+        const movies = contentData.data || contentData || [];
         
         const html = movies.map(m => `
-            <div class="movie-card" onclick="openReviewModal(${m.content_id}, '${m.title}')">
+            <div class="movie-card" onclick="openReviewModal(${m.content_id}, '${m.title.replace(/'/g, "\\'")}')">
                 <div class="poster-placeholder">${m.title.substring(0,2)}</div>
                 <h4>${m.title}</h4>
                 <p>${m.genre} (${m.release_year})</p>
                 <button class="btn-sm">Log / Review</button>
             </div>
         `).join('');
-        document.getElementById('moviesGrid').innerHTML = html;
+        document.getElementById('moviesGrid').innerHTML = html || 'No movies available.';
     } catch (err) {
         console.error("Error loading movies:", err);
     }
@@ -256,12 +262,13 @@ document.getElementById('reviewForm').addEventListener('submit', async (e) => {
     };
 
     try {
-        await fetch(`${API_URL}/reviews`, {
+        const response = await fetch(`${API_URL}/reviews`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(body)
         });
 
+        const data = await response.json();
         closeModal();
         alert('Review submitted!');
         document.getElementById('modalText').value = '';
